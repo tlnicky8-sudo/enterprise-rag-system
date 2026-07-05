@@ -1,0 +1,54 @@
+# 运行时策略配置（复制为 runtime.yaml 后按需修改）
+# 基础设施（Redis/Milvus/模型路径）仍在 config.ini
+
+features:
+  enable_faq: true
+  enable_grounding_gate: true
+  enable_strategy_selector: true
+  enable_llm_intent_fallback: true
+  enable_cache_write: true
+  enable_stream: true
+  skip_faq_when_source_filter: true
+
+retrieval:
+  retrieval_k: 5
+  candidate_m: 2
+  hybrid_dense_weight: 1.0
+  hybrid_sparse_weight: 0.7
+  milvus_nprobe: 10
+  subquery_max_count: 3
+  short_circuit_rerank_score: 0.85
+
+faq:
+  semantic_threshold: 0.92
+  bm25_threshold: 0.85
+  bm25_min_score: 0.1
+  cache_ttl: 86400
+  cache_write_threshold: 0.8
+  rerank_weight: 0.6
+  llm_weight: 0.4
+  min_answer_length: 20
+
+grounding:
+  require_context_for_legal_qa: true
+  min_rerank_score: 0.35
+
+generation:
+  max_context_chars: 6000
+  max_prompt_length: 4096
+
+strategy:
+  default_strategy: 直接检索
+  llm_temperature: 0.1
+  system_message: 你是一个有用的助手。
+
+intent:
+  fallback_category: 专业咨询
+  llm_temperature: 0.0
+  system_message: 你是一个严格的意图分类器。
+
+cache:
+  time_sensitive_pattern: "今天|本周|本月|今年|现在|实时|当前|几点|天气"
+
+prompts:
+  dir: config/prompts
