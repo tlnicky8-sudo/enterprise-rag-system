@@ -1,13 +1,22 @@
 import json
 import os
 
-import torch
 from base import logger
 from core.intent_runtime import load_intent_classifier
 from core.prompts import RAGPrompts
 
 
 VALID_INTENT_LABELS = {"通用知识", "专业咨询"}
+
+
+def _resolve_device():
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
 
 class QueryClassifier:
@@ -27,13 +36,7 @@ class QueryClassifier:
         self.model = None
         self.tokenizer = None
         self.checkpoint_path = None
-        self.device = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
+        self.device = "cpu"
         self.label_map = {"通用知识": 0, "专业咨询": 1}
         self.id_to_label = {0: "通用知识", 1: "专业咨询"}
         self.llm_client = None
@@ -51,6 +54,7 @@ class QueryClassifier:
                 self.id_to_label = {int(v): k for k, v in self.label_map.items()}
 
         try:
+            self.device = _resolve_device()
             self.model, self.tokenizer, self.checkpoint_path = load_intent_classifier(
                 model_path=self.model_path,
                 bert_base_path=self.bert_base_path,
@@ -114,6 +118,8 @@ class QueryClassifier:
     def _predict_with_bert(self, query):
         if self.model is None or self.tokenizer is None:
             return None
+
+        import torch
 
         encoding = self.tokenizer(
             query,

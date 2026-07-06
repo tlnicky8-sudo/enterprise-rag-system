@@ -13,7 +13,7 @@ The BERT intent classifier is optional. If no trained checkpoint exists under
 `models/bert_outputs/`, the QA pipeline falls back to LLM-based intent
 classification and finally defaults to `专业咨询`.
 
-Train under `Bert_2classfication/`:
+Train under `Bert_2classfication/` (see [Bert_2classfication/README.md](../Bert_2classfication/README.md) for full guide):
 
 ```bash
 cd Bert_2classfication

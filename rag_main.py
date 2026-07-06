@@ -1,4 +1,4 @@
-"""劳动法智能问答系统 - CLI 入口"""
+"""智能问答系统 - CLI 入口"""
 import uuid
 
 from openai import OpenAI

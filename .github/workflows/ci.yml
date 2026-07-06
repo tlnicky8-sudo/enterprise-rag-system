@@ -20,7 +20,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,faq,retrieval]"
 
       - name: Run smoke tests
         run: pytest

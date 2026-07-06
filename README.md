@@ -1,12 +1,10 @@
 # QA Projector
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/tlnicky8-sudo/enterprise-rag-system/actions/workflows/ci.yml/badge.svg)](https://github.com/tlnicky8-sudo/enterprise-rag-system/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-面向中文劳动法问答的 RAG 系统。提供 Flask Web 聊天界面，使用 Milvus + BGE-M3 混合检索与重排序，并通过 OpenAI-compatible 接口调用 DashScope / Qwen / DeepSeek 等模型生成答案。
-
-> 将 README 中的 `OWNER/REPO` 替换为你的 GitHub 仓库路径后，CI 徽章即可正常显示。
+面向企业问答的 RAG 系统。提供 Flask Web 聊天界面，使用 Milvus + BGE-M3 混合检索与重排序，并通过 OpenAI-compatible 接口调用 DashScope / Qwen / DeepSeek 等模型生成答案。
 
 ## Documentation
 
@@ -71,8 +69,8 @@ Query
 ### Install
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
-cd rag_projector
+git clone https://github.com/tlnicky8-sudo/enterprise-rag-system.git
+cd enterprise-rag-system
 
 uv venv && uv sync --extra retrieval --extra documents --extra faq --extra dev
 # 或: pip install -r requirements.txt && pip install -r requirements-dev.txt

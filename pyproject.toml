@@ -9,6 +9,7 @@ dependencies = [
     "openai>=1.75.0",
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0.0",
+    "langchain-core>=0.3.55",
 ]
 
 [project.optional-dependencies]
@@ -55,6 +56,9 @@ eval = [
 ]
 dev = [
     "pytest>=8.0.0",
+    "jieba>=0.42.1",
+    "numpy>=2.1.0",
+    "redis>=5.0.0",
 ]
 
 [build-system]

@@ -6,7 +6,7 @@
 
 ```bash
 git clone <your-fork-url>
-cd rag_projector
+cd enterprise-rag-system
 uv venv && uv sync --extra retrieval --extra documents --extra faq --extra dev
 cp config.example.ini config.ini
 cp config/runtime.example.yaml config/runtime.yaml
