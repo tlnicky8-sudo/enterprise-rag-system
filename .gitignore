@@ -47,6 +47,7 @@ env/
 !.env.example
 
 config.ini
+
 config/runtime.yaml
 
 
@@ -89,11 +90,9 @@ data/*
 
 !data/.gitkeep
 
-data/assesment_data/*results*.csv
-
 data/assessment_data/*results*.csv
 
-Bert_2classfication/train_data/
+intent_classification/train_data/
 
 
 
@@ -105,7 +104,7 @@ dist/
 
 *.egg-info/
 
-qa_projector.egg-info/
+enterprise_rag_system.egg-info/
 
 
 
@@ -122,4 +121,3 @@ uv.lock
 *.bak
 
 *.swp
-

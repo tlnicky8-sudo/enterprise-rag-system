@@ -228,7 +228,7 @@ class VectorStore:
             anns_field="dense_vector",
             param={"metric_type": "IP", "params": {"nprobe": conf.MILVUS_NPROBE}},
             limit=k,
-            expr=filter_expr  # 按来源过滤，例如 labor_law
+            expr=filter_expr  # 按来源过滤，例如 enterprise
         )
         # 创建稀疏向量搜索请求
         sparse_request = AnnSearchRequest(

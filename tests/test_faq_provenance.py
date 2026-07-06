@@ -20,11 +20,11 @@ def _cache():
 
 def test_qa_records_preserve_citations_and_grounded_flag():
     cache = _cache()
-    citations = [{"id": 1, "title": "第四十七条", "excerpt": "经济补偿"}]
+    citations = [{"id": 1, "title": "年假制度", "excerpt": "带薪年假"}]
 
     added = cache.add_qa_pair(
-        "解除赔偿怎么算",
-        "根据第四十七条计算。[1]",
+        "年假有多少天",
+        "根据员工手册，满一年享 5 天年假。[1]",
         citations=citations,
         grounded=True,
     )
@@ -33,7 +33,7 @@ def test_qa_records_preserve_citations_and_grounded_flag():
     records = cache.get_qa_records()
     assert records[0]["citations"] == citations
     assert records[0]["grounded"] is True
-    assert cache.get_qa_pairs() == [("解除赔偿怎么算", "根据第四十七条计算。[1]")]
+    assert cache.get_qa_pairs() == [("年假有多少天", "根据员工手册，满一年享 5 天年假。[1]")]
 
 
 def test_qa_record_update_replaces_provenance():

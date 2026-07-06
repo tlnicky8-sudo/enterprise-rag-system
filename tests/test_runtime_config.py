@@ -36,7 +36,7 @@ faq:
   min_answer_length: 30
 
 grounding:
-  require_context_for_legal_qa: false
+  require_context_for_kb_qa: false
   min_rerank_score: 0.4
 
 generation:
@@ -77,8 +77,8 @@ db = 0
 [milvus]
 host = localhost
 port = 19530
-database_name = labor_law
-collection_name = labor_law_rag
+database_name = enterprise_rag
+collection_name = enterprise_rag
 
 [llm]
 model = qwen-plus
@@ -94,7 +94,7 @@ candidate_m = 2
 log_file = logs/app.log
 
 [app]
-valid_sources = ["labor_law"]
+valid_sources = ["enterprise"]
 customer_service_phone = 12345678
 
 [models]
@@ -124,7 +124,7 @@ bert_classifier_path = models/bert_outputs
 def test_prompt_registry_loads_templates():
     config = Config()
     rag_prompt = RAGPrompts.rag_prompt(config)
-    assert "劳动法助手" in rag_prompt.template
+    assert "企业知识助手" in rag_prompt.template
     assert "phone" in rag_prompt.input_variables
 
     strategy_prompt = RAGPrompts.strategy_prompt(config)

@@ -49,11 +49,11 @@ class EvalRecord:
 
 
 def default_golden_path(conf):
-    return conf.PROJECT_ROOT / "data" / "assesment_data" / "live_eval_golden.jsonl"
+    return conf.PROJECT_ROOT / "data" / "assessment_data" / "live_eval_golden.jsonl"
 
 
 def default_output_dir(conf):
-    return conf.PROJECT_ROOT / "data" / "assesment_data" / "live_eval_results"
+    return conf.PROJECT_ROOT / "data" / "assessment_data" / "live_eval_results"
 
 
 def load_cases(path):
@@ -120,7 +120,7 @@ def build_pipeline(conf):
         completion = client.chat.completions.create(
             model=conf.LLM_MODEL,
             messages=[
-                {"role": "system", "content": "你是一个专业的劳动法助手。"},
+                {"role": "system", "content": conf.GENERATION_SYSTEM_MESSAGE},
                 {"role": "user", "content": prompt},
             ],
             timeout=60,

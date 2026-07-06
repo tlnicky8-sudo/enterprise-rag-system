@@ -30,17 +30,20 @@ faq:
   min_answer_length: 20
 
 grounding:
-  require_context_for_legal_qa: true
+  require_context_for_kb_qa: true
   min_rerank_score: 0.35
 
 generation:
   max_context_chars: 6000
   max_prompt_length: 4096
+  system_message: 你是一个专业的企业知识助手，请基于提供的公司内部制度文档上下文回答用户问题。
 
 strategy:
   default_strategy: 直接检索
   llm_temperature: 0.1
-  system_message: 你是一个有用的助手。
+  system_message: 你是一个企业知识库检索策略助手，负责为制度文档问答选择最合适的检索方式。
+  enable_heuristic_fallback: true
+  heuristic_override_direct: true
 
 intent:
   fallback_category: 专业咨询

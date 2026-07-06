@@ -91,12 +91,12 @@ class OCRPDFLoader(BaseLoader):
 
 
 if __name__ == '__main__':
-    pdf_loader = OCRPDFLoader(file_path=r"D:\uv_projector\qa_projector\data\samples\ocr_03.pdf")
+    pdf_loader = OCRPDFLoader(file_path=r"D:\enterprise-rag-system\data\samples\ocr_03.pdf")
     doc = pdf_loader.load()
 
     print(type(doc))
     print(doc)
-    # text_spliter = CharacterTextSplitter(chunk_size=300, chunk_overlap=20)
-    # result = text_spliter.split_documents(doc)
+    # text_splitter = CharacterTextSplitter(chunk_size=300, chunk_overlap=20)
+    # result = text_splitter.split_documents(doc)
     # print(len(result))
     # print(result[0])

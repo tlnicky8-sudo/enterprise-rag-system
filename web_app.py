@@ -1,4 +1,4 @@
-"""劳动法智能问答系统 - Web 版"""
+"""企业知识库智能问答系统 - Web 版"""
 import json
 import uuid
 import sys
@@ -33,7 +33,7 @@ try:
             messages=[
                 {
                     "role": "system",
-                    "content": "你是一个专业的劳动法助手，请基于提供的法律条文上下文回答用户问题。",
+                    "content": conf.GENERATION_SYSTEM_MESSAGE,
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -47,7 +47,7 @@ try:
                 messages=[
                     {
                         "role": "system",
-                        "content": "你是一个专业的劳动法助手，请基于提供的法律条文上下文回答用户问题。",
+                        "content": conf.GENERATION_SYSTEM_MESSAGE,
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -157,7 +157,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>劳动法智能问答</title>
+<title>企业知识库问答</title>
 <style>
   *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
   :root{
@@ -299,7 +299,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <div class="bg-grid"></div>
 
 <header>
-  <h1>劳动法智能问答</h1>
+  <h1>企业知识库问答</h1>
   <div class="header-actions">
     <select class="source-select" id="sourceFilter">
       <option value="">全部来源</option>
@@ -314,14 +314,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <div class="chat-area" id="chatArea">
   <div class="empty-state">
     <div>
-      <div>欢迎使用 <strong>劳动法智能问答系统</strong></div>
-      <div class="welcome-hint">基于《劳动合同法》和《劳动法》条文，为您提供专业解答</div>
+      <div>欢迎使用 <strong>天恒科技企业知识库</strong></div>
+      <div class="welcome-hint">基于公司内部制度与流程文档，为您提供准确解答</div>
     </div>
   </div>
 </div>
 
 <div class="input-area">
-  <input id="queryInput" type="text" placeholder="输入您的劳动法问题…" onkeydown="if(event.key==='Enter')send()">
+  <input id="queryInput" type="text" placeholder="输入您的问题，如年假、报销、VPN…" onkeydown="if(event.key==='Enter')send()">
   <button class="send-btn" id="sendBtn" onclick="send()">发送</button>
 </div>
 
@@ -459,7 +459,7 @@ function addMessage(role, text) {
   div.className = `msg ${role}`;
   if (role === "ai") {
     div.innerHTML = `
-      <div class="avatar">法</div>
+      <div class="avatar">企</div>
       <div class="bubble">
         <div class="answer-text">${escapeHtml(text)}</div>
       </div>
@@ -513,7 +513,7 @@ function attachTrustBar(parentMsg, data) {
     pill.textContent = data.citation_count > 0 ? "FAQ 缓存回答，含原始证据" : "FAQ 固定问答";
   } else if (data.source === "direct_llm") {
     pill.className = "trust-pill";
-    pill.textContent = "通用问题，未检索法条";
+    pill.textContent = "通用问题，未检索知识库";
   } else {
     pill.className = "trust-pill refused";
     pill.textContent = "未检索到可引用证据";
@@ -584,7 +584,7 @@ async function clearHistory() {
 
 def main():
     print("\n" + "=" * 50)
-    print("  劳动法智能问答系统 - Web 版")
+    print("  企业知识库智能问答系统 - Web 版")
     print("=" * 50)
     print(f"\n  浏览器访问: http://127.0.0.1:5000")
     print(f"  按 Ctrl+C 停止服务\n")

@@ -1,35 +1,38 @@
 # Models
 
-This directory is for local model files. Model weights are intentionally not committed.
+本地模型目录。模型权重**不提交到 Git**（体积过大），请在本机或 `config.ini` 配置路径。
 
-Expected retrieval model paths:
+## 意图分类（可选）
 
-- `models/bge-m3`
-- `models/bge-reranker-large`
+训练产出保存在 `models/bert_outputs/`：
 
-## Intent classifier
+| 文件 | 说明 |
+|------|------|
+| `best_intent_classifier.pt` | 浮点 checkpoint（运行时默认加载） |
+| `best_intent_classifier_int8.pt` | INT8 量化版（`quantize_intent_classifier.py` 生成） |
 
-The BERT intent classifier is optional. If no trained checkpoint exists under
-`models/bert_outputs/`, the QA pipeline falls back to LLM-based intent
-classification and finally defaults to `专业咨询`.
+训练与量化见 [intent_classification/README.md](../intent_classification/README.md)。  
+若本地没有 checkpoint，主项目会回退到 LLM API 做意图分类。
 
-Train under `Bert_2classfication/` (see [Bert_2classfication/README.md](../Bert_2classfication/README.md) for full guide):
+## 检索模型（必需）
 
-```bash
-cd Bert_2classfication
-python train_intent_classifier.py
+请在 `config.ini` 配置本地路径：
+
+| 模型 | 配置项 |
+|------|--------|
+| `bge-m3` | `bge_m3_path` |
+| `bge-reranker-large` | `bge_reranker_path` |
+| `bert-base-chinese` | `bert_base_path`（仅训练意图分类时需要） |
+
+```ini
+[models]
+bge_m3_path = /path/to/bge-m3
+bge_reranker_path = /path/to/bge-reranker-large
+bert_base_path = /path/to/bert-base-chinese
+bert_classifier_path = models/bert_outputs
 ```
 
-The best checkpoint is saved to:
-
-```text
-models/bert_outputs/best_intent_classifier.pt
-```
-
-The QA pipeline loads this checkpoint automatically through `core/query_classifier.py`
-when it exists.
-
-Label mapping:
+## 标签映射
 
 - `0` = 通用知识
 - `1` = 专业咨询

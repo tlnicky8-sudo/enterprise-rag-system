@@ -1,4 +1,4 @@
-# Full runtime dependencies for QA Projector.
+# Full runtime dependencies for Enterprise RAG System.
 # pyproject.toml remains the packaging source of truth.
 
 # Web & API

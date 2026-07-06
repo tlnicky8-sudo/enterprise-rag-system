@@ -19,7 +19,7 @@ cp .env.example .env
 pytest
 ```
 
-CI 会在 push / pull request 时自动运行轻量 smoke tests，不依赖 Milvus、Redis 或大模型。
+CI 会在 push / pull request 时自动运行轻量 smoke tests，不依赖 Milvus、Redis 或 LLM。
 
 ## Pull Request 规范
 

@@ -115,6 +115,6 @@ class OCRDOCLoader(BaseLoader):
 
 
 if __name__ == '__main__':
-    docx_loader = OCRDOCLoader(filepath=r'D:\uv_projector\qa_projector\data\samples\ocr_02.docx')
+    docx_loader = OCRDOCLoader(filepath=r'D:\enterprise-rag-system\data\samples\ocr_02.docx')
     doc = docx_loader.load()
     print(doc)

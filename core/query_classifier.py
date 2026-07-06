@@ -63,7 +63,7 @@ class QueryClassifier:
             )
             logger.info(f"加载意图识别模型成功: {self.checkpoint_path}")
         except Exception as exc:
-            logger.warning(f"加载意图识别模型失败，将使用大模型兜底: {exc}")
+            logger.warning(f"加载意图识别模型失败，将使用 LLM 兜底: {exc}")
             self.model = None
             self.tokenizer = None
 
@@ -107,11 +107,11 @@ class QueryClassifier:
             content = completion.choices[0].message.content if completion.choices else ""
             category = self._normalize_label(content)
             if category:
-                logger.info(f"大模型意图识别结果：{category}")
+                logger.info(f"LLM 意图识别结果：{category}")
                 return category
-            logger.warning(f"大模型意图识别返回无效标签: {content!r}")
+            logger.warning(f"LLM 意图识别返回无效标签: {content!r}")
         except Exception as exc:
-            logger.warning(f"大模型意图识别失败，使用兜底分类: {exc}")
+            logger.warning(f"LLM 意图识别失败，使用兜底分类: {exc}")
 
         return self._fallback_category()
 
@@ -151,7 +151,7 @@ class QueryClassifier:
             if category:
                 return category
         except Exception as exc:
-            logger.warning(f"BERT 意图识别失败，将使用大模型兜底: {exc}")
+            logger.warning(f"BERT 意图识别失败，将使用 LLM 兜底: {exc}")
 
         return self._predict_with_llm(query)
 
@@ -159,10 +159,10 @@ class QueryClassifier:
 if __name__ == "__main__":
     classifier = QueryClassifier()
     test_queries = [
-        "劳动合同法规定的试用期最长是多久",
-        "加班工资如何计算？",
+        "天恒科技年假有多少天？",
+        "加班费如何计算？",
         "5*9等于多少？",
-        "劳动法对女职工有哪些特殊保护？",
+        "公司 VPN 怎么配置？",
         "怎么和陌生人聊天不尴尬？",
     ]
     for query in test_queries:

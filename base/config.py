@@ -44,14 +44,14 @@ class Config:
         self.MILVUS_HOST = self._get("milvus", "host", "localhost", "MILVUS_HOST")
         self.MILVUS_PORT = self._get("milvus", "port", "19530", "MILVUS_PORT")
         self.MILVUS_DATABASE_NAME = self._get(
-            "milvus", "database_name", "labor_law", "MILVUS_DATABASE_NAME"
+            "milvus", "database_name", "enterprise_rag", "MILVUS_DATABASE_NAME"
         )
         self.MILVUS_COLLECTION_NAME = self._get(
-            "milvus", "collection_name", "labor_law_rag", "MILVUS_COLLECTION_NAME"
+            "milvus", "collection_name", "enterprise_rag", "MILVUS_COLLECTION_NAME"
         )
 
         # LLM 配置
-        self.LLM_MODEL = self._get("llm", "model", "qwen-plus", "LLM_MODEL")
+        self.LLM_MODEL = self._get("llm", "model", "deepseek-v4-pro", "LLM_MODEL")
         self.DASHSCOPE_API_KEY = self._env("DASHSCOPE_API_KEY", "API-KEY", default="")
         self.DASHSCOPE_BASE_URL = self._env(
             "DASHSCOPE_BASE_URL",
@@ -65,7 +65,7 @@ class Config:
         self.CHUNK_OVERLAP = self._getint("retrieval", "chunk_overlap", 50)
 
         # 应用配置
-        valid_sources = self._get("app", "valid_sources", '["labor_law"]', "VALID_SOURCES")
+        valid_sources = self._get("app", "valid_sources", '["enterprise"]', "VALID_SOURCES")
         self.VALID_SOURCES = self._parse_list(valid_sources)
         self.CUSTOMER_SERVICE_PHONE = self._get(
             "app", "customer_service_phone", "12345678", "CUSTOMER_SERVICE_PHONE"
@@ -89,9 +89,9 @@ class Config:
         )
 
         # 领域配置
-        self.DOMAIN_NAME = self._get("domain", "name", "labor_law", "DOMAIN_NAME")
+        self.DOMAIN_NAME = self._get("domain", "name", "enterprise", "DOMAIN_NAME")
         self.DOMAIN_DISPLAY_NAME = self._get(
-            "domain", "display_name", "劳动法", "DOMAIN_DISPLAY_NAME"
+            "domain", "display_name", "企业知识库", "DOMAIN_DISPLAY_NAME"
         )
 
         self._load_runtime_settings()
@@ -145,9 +145,20 @@ class Config:
         self.FAQ_MIN_ANSWER_LENGTH = runtime.get_int("faq", "min_answer_length", 20)
 
         # Grounding
-        self.REQUIRE_CONTEXT_FOR_LEGAL_QA = self._runtime_or_ini_bool(
-            "grounding", "require_context_for_legal_qa", "grounding", "require_context_for_legal_qa", True
-        )
+        # Grounding — 支持旧键 require_context_for_legal_qa 向后兼容
+        kb_qa = self.runtime.get("grounding", "require_context_for_kb_qa", None)
+        if kb_qa is None:
+            kb_qa = self.runtime.get("grounding", "require_context_for_legal_qa", None)
+        if kb_qa is not None:
+            from base.runtime_loader import _coerce_bool
+
+            self.REQUIRE_CONTEXT_FOR_KB_QA = _coerce_bool(kb_qa)
+        elif self.config.has_option("grounding", "require_context_for_kb_qa"):
+            self.REQUIRE_CONTEXT_FOR_KB_QA = self._getbool("grounding", "require_context_for_kb_qa", True)
+        elif self.config.has_option("grounding", "require_context_for_legal_qa"):
+            self.REQUIRE_CONTEXT_FOR_KB_QA = self._getbool("grounding", "require_context_for_legal_qa", True)
+        else:
+            self.REQUIRE_CONTEXT_FOR_KB_QA = True
         self.MIN_RERANK_SCORE = self._runtime_or_ini_float(
             "grounding", "min_rerank_score", "grounding", "min_rerank_score", 0.35
         )
@@ -155,12 +166,23 @@ class Config:
         # Generation
         self.MAX_CONTEXT_CHARS = runtime.get_int("generation", "max_context_chars", 6000)
         self.MAX_PROMPT_LENGTH = runtime.get_int("generation", "max_prompt_length", 4096)
+        self.GENERATION_SYSTEM_MESSAGE = runtime.get_str(
+            "generation",
+            "system_message",
+            "你是一个专业的企业知识助手，请基于提供的公司内部制度文档上下文回答用户问题。",
+        )
 
         # Strategy selector
         self.DEFAULT_STRATEGY = runtime.get_str("strategy", "default_strategy", "直接检索")
         self.STRATEGY_LLM_TEMPERATURE = runtime.get_float("strategy", "llm_temperature", 0.1)
         self.STRATEGY_SYSTEM_MESSAGE = runtime.get_str(
             "strategy", "system_message", "你是一个有用的助手。"
+        )
+        self.STRATEGY_ENABLE_HEURISTIC_FALLBACK = runtime.get_bool(
+            "strategy", "enable_heuristic_fallback", True
+        )
+        self.STRATEGY_HEURISTIC_OVERRIDE_DIRECT = runtime.get_bool(
+            "strategy", "heuristic_override_direct", True
         )
 
         # Intent classifier fallback

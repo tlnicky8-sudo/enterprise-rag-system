@@ -12,15 +12,16 @@
 
 | 路径 | 用途 | 入库命令 |
 |------|------|----------|
-| `labor_law_data/` | RAG 法律语料（PDF / Word / MD 等） | `python setup_data.py` |
+| `enterprise_data/` | RAG 企业文档语料（PDF / Word / MD 等） | `python setup_data.py` |
 | `faq_data/faq_pairs.jsonl` | 高频问答对（本地自建） | `python setup_faq_data.py` |
+| `assessment_data/` | 评估集与评估输出（本地自建） | `python scripts/live_eval.py` |
 | `processed/` | 入库中间产物（Markdown） | `setup_data.py` 自动生成 |
 | `ingest_reports/` | 入库血缘报告 | `setup_data.py` 自动生成 |
 
 ## 快速开始
 
 ```bash
-# 1. 法律文档 → data/labor_law_data/
+# 1. 企业文档 → data/enterprise_data/
 python setup_data.py
 
 # 2. FAQ 问答对
@@ -36,7 +37,7 @@ python scripts/preheat_faq_cache.py
 ## 意图识别训练数据
 
 ```text
-Bert_2classfication/train_data/
+intent_classification/train_data/
   train.jsonl
   test.jsonl
 ```

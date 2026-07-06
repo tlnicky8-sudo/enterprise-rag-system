@@ -4,20 +4,24 @@ import re
 
 from core.ingest.models import CleanDocument, IngestContext, ParsedDocument, content_hash
 
+# 清洗阶段：去页码噪声、统一标题、脱敏，适用于企业制度/手册 PDF、Word、Markdown。
 
 PAGE_NOISE = re.compile(r"^\s*(第\s*)?\d+\s*(页)?\s*$", re.MULTILINE)
 MULTI_BLANK = re.compile(r"\n{3,}")
 SPACES = re.compile(r"[ \t]+")
-ARTICLE = re.compile(r"(?m)^\s*(第[一二三四五六七八九十百零〇\d]+条)\s*")
-CHAPTER = re.compile(r"(?m)^\s*(第[一二三四五六七八九十百零〇\d]+章)\s*(.+)?$")
+# PDF/Word 导出时常见的「第X章 / 第X节 / 第X条」标题，统一转为 Markdown 方便后续按章节切块
+NUMBERED_CHAPTER = re.compile(r"(?m)^\s*(第[一二三四五六七八九十百零〇\d]+章)\s*(.+)?$")
+NUMBERED_SECTION = re.compile(r"(?m)^\s*(第[一二三四五六七八九十百零〇\d]+节)\s*(.+)?$")
+NUMBERED_ARTICLE = re.compile(r"(?m)^\s*(第[一二三四五六七八九十百零〇\d]+条)\s*")
 PHONE = re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)")
 ID_CARD = re.compile(r"(?<!\d)\d{17}[\dXx](?!\d)")
 HEADING = re.compile(r"(?m)^#{1,6}\s+(.+)$")
 
 
-def _repair_legal_headings(text: str) -> str:
-    text = CHAPTER.sub(lambda m: f"## {m.group(1)} {m.group(2) or ''}".rstrip(), text)
-    text = ARTICLE.sub(lambda m: f"### {m.group(1)} ", text)
+def _repair_document_headings(text: str) -> str:
+    text = NUMBERED_CHAPTER.sub(lambda m: f"## {m.group(1)} {m.group(2) or ''}".rstrip(), text)
+    text = NUMBERED_SECTION.sub(lambda m: f"### {m.group(1)} {m.group(2) or ''}".rstrip(), text)
+    text = NUMBERED_ARTICLE.sub(lambda m: f"### {m.group(1)} ", text)
     return text
 
 
@@ -41,7 +45,7 @@ def clean_text(text: str, desensitize: bool = True) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = PAGE_NOISE.sub("", text)
     text = SPACES.sub(" ", text)
-    text = _repair_legal_headings(text)
+    text = _repair_document_headings(text)
     text = _dedupe_lines(text)
     text = MULTI_BLANK.sub("\n\n", text).strip()
     if desensitize:
@@ -80,4 +84,3 @@ class CleanStage:
             outputs.append(CleanDocument(parsed=doc, text=text, headings=headings, metadata=metadata))
         ctx.add_stage(self.name, input_count=len(docs), output_count=len(outputs), skipped=skipped)
         return outputs
-

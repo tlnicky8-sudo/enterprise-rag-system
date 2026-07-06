@@ -101,6 +101,6 @@ class OCRPPTLoader(BaseLoader):
 
 
 if __name__ == '__main__':
-    img_loader = OCRPPTLoader(filepath=r'D:\uv_projector\qa_projector\data\samples\ocr_01.pptx')
+    img_loader = OCRPPTLoader(filepath=r'D:\enterprise-rag-system\data\samples\ocr_01.pptx')
     doc = img_loader.load()
     print(doc)

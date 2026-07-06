@@ -5,12 +5,15 @@ class RAGPrompts:
     """Prompt templates loaded from config/prompts/*.txt."""
 
     _registry = None
+    _registry_path = None
 
     @classmethod
     def _get_registry(cls, conf=None):
         conf = conf or Config()
-        if cls._registry is None or str(conf.PROMPTS_DIR) != str(conf.prompts.prompts_dir):
+        prompts_path = str(conf.PROMPTS_DIR)
+        if cls._registry is None or cls._registry_path != prompts_path:
             cls._registry = conf.prompts
+            cls._registry_path = prompts_path
         return cls._registry
 
     @classmethod

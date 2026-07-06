@@ -6,20 +6,42 @@ from langchain_core.documents import Document
 
 from base import Config
 from core.ingest.models import ChildBlock, CleanDocument, IngestContext, ParentBlock, content_hash, now_iso
-from text_spliter import ChineseRecursiveTextSplitter
+from text_splitter import ChineseRecursiveTextSplitter
 
 conf = Config()
 
-ARTICLE_HEADING = re.compile(r"(?m)^###\s+(第[一二三四五六七八九十百零〇\d]+条)\s*")
-HEADING = re.compile(r"(?m)^#{1,6}\s+(.+)$")
+# 企业 Markdown 文档常见结构：## 第一章 / ### 3.1 工作时间
+MARKDOWN_SECTION_HEADING = re.compile(r"(?m)^#{2,3}\s+(.+)$")
+# 部分 PDF/Word 转出的制度文本仍保留「第X条」编号
+NUMBERED_ARTICLE_HEADING = re.compile(r"(?m)^###\s+(第[一二三四五六七八九十百零〇\d]+条)\s*")
 
 
 def _doc_id(file_path: str, file_hash: str) -> str:
     return content_hash(f"{file_path}:{file_hash}")[:16]
 
 
-def _split_by_articles(text: str) -> list[tuple[str, str]]:
-    matches = list(ARTICLE_HEADING.finditer(text))
+def _split_by_markdown_sections(text: str) -> list[tuple[str, str]]:
+    """按 Markdown 二级/三级标题切分父块，适合员工手册、制度文档。"""
+    matches = list(MARKDOWN_SECTION_HEADING.finditer(text))
+    if len(matches) < 2:
+        return []
+
+    parts: list[tuple[str, str]] = []
+    prefix = text[: matches[0].start()].strip()
+    for idx, match in enumerate(matches):
+        start = match.start()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        section_title = match.group(1).strip()
+        body = text[start:end].strip()
+        if prefix and idx == 0:
+            body = f"{prefix}\n\n{body}"
+        parts.append((section_title, body))
+    return parts
+
+
+def _split_by_numbered_articles(text: str) -> list[tuple[str, str]]:
+    """按「第X条」切分父块，兼容法规式或旧版 PDF 语料。"""
+    matches = list(NUMBERED_ARTICLE_HEADING.finditer(text))
     if not matches:
         return []
 
@@ -68,9 +90,13 @@ class ChunkStage:
         )
 
     def _parent_units(self, doc: CleanDocument) -> list[tuple[str, str]]:
-        article_units = _split_by_articles(doc.text)
-        if article_units:
-            return article_units
+        # 优先按文档结构切分，再回退到固定长度切分
+        markdown_units = _split_by_markdown_sections(doc.text)
+        if markdown_units:
+            return markdown_units
+        numbered_units = _split_by_numbered_articles(doc.text)
+        if numbered_units:
+            return numbered_units
         base_doc = Document(page_content=doc.text, metadata=dict(doc.metadata))
         parents = self.parent_splitter.split_documents([base_doc])
         return [("", item.page_content) for item in parents]
@@ -144,4 +170,3 @@ class ChunkStage:
             ],
         )
         return outputs
-

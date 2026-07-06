@@ -8,7 +8,7 @@ from transformers import BertConfig, BertModel, BertTokenizer
 
 
 class BertClassifierModel(nn.Module):
-    """BERT + linear head, matching Bert_2classfication training output."""
+    """BERT + linear head, matching intent_classification training output."""
 
     def __init__(self, bert_source, num_labels=2):
         super().__init__()

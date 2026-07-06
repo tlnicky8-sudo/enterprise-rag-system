@@ -1,7 +1,7 @@
 [project]
-name = "qa-projector"
+name = "enterprise-rag-system"
 version = "0.1.0"
-description = "A Chinese labor-law RAG question answering system with Flask, Milvus hybrid retrieval, and DashScope-compatible LLM APIs."
+description = "A Chinese enterprise knowledge-base RAG template with Flask, Milvus hybrid retrieval, and OpenAI-compatible LLM APIs."
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
@@ -66,7 +66,7 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["base*", "core*", "document_loaders*", "text_spliter*"]
+include = ["base*", "core*", "document_loaders*", "text_splitter*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

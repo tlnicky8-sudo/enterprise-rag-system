@@ -1,4 +1,4 @@
-"""法律语料六步入库：解析 -> 清洗 -> 切块 -> 增强 -> 索引 -> 血缘治理。"""
+"""企业语料六步入库：解析 -> 清洗 -> 切块 -> 增强 -> 索引 -> 血缘治理。"""
 import argparse
 import sys
 from pathlib import Path
@@ -34,7 +34,7 @@ def resolve_source_dir(source):
 
 def main(skip_if_exists=False, dry_run=False, enhance=False, doc_version="1"):
     print("\n" + "=" * 50)
-    print("  法律语料六步入库")
+    print("  企业语料六步入库")
     print("=" * 50)
     print("  ① 解析  ② 清洗  ③ 切块  ④ 增强  ⑤ 索引  ⑥ 血缘")
 
@@ -111,7 +111,7 @@ def main(skip_if_exists=False, dry_run=False, enhance=False, doc_version="1"):
     print(f"\n  总计写入/更新 {total} 个文档块到向量库")
     if missing_dirs and total == 0:
         print("  错误：所有语料目录都不存在或没有有效内容")
-        print("  请将文档放到 data/{source}_data/，例如 data/labor_law_data/")
+        print("  请将文档放到 data/{source}_data/，例如 data/enterprise_data/")
         return False
 
     print("\n" + "=" * 50)
@@ -128,7 +128,7 @@ def main(skip_if_exists=False, dry_run=False, enhance=False, doc_version="1"):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Ingest legal corpus into Milvus")
+    parser = argparse.ArgumentParser(description="Ingest enterprise knowledge corpus into Milvus")
     parser.add_argument(
         "--skip-if-exists",
         action="store_true",

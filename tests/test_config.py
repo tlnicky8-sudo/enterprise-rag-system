@@ -32,7 +32,7 @@ candidate_m = 2
 log_file = logs/test.log
 
 [app]
-valid_sources = ["labor_law", "contract"]
+valid_sources = ["enterprise", "hr_policy"]
 customer_service_phone = 10086
 
 [models]
@@ -55,9 +55,9 @@ def test_config_loads_file_values(tmp_path, monkeypatch):
     assert config.REDIS_HOST == "redis.local"
     assert config.REDIS_PORT == 6380
     assert config.MILVUS_COLLECTION_NAME == "qa_collection"
-    assert config.VALID_SOURCES == ["labor_law", "contract"]
+    assert config.VALID_SOURCES == ["enterprise", "hr_policy"]
     assert config.CHILD_CHUNK_SIZE == 250
-    assert config.DOMAIN_NAME == "labor_law"
+    assert config.DOMAIN_NAME == "enterprise"
     assert config.FAQ_BM25_THRESHOLD == 0.85
 
 

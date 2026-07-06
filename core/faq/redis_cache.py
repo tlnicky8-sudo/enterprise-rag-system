@@ -194,7 +194,7 @@ class FAQRedisCache:
             query_params={"query_vec": query_vector_bytes},
         )
         if results.total <= 0:
-            return None, 0.0
+            return None, 0.0, [], False
 
         best_match = results.docs[0]
         similarity = 1 - float(best_match.score)

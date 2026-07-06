@@ -41,6 +41,96 @@ class RAGSystem:
         parsed = parse_llm_json_response(self._call_llm_text(prompt))
         return parsed["answer"], parsed["confidence"]
 
+    @staticmethod
+    def _iter_answer_from_json_stream(chunks):
+        """Yield the answer string while a JSON response is still streaming."""
+        raw_parts = []
+        emitted = []
+        search_buffer = ""
+        state = "search_key"
+        escape = False
+        unicode_buffer = ""
+
+        def emit(text):
+            emitted.append(text)
+            return text
+
+        for chunk in chunks:
+            text = str(chunk)
+            raw_parts.append(text)
+            for char in text:
+                if state == "search_key":
+                    search_buffer = (search_buffer + char)[-32:]
+                    if '"answer"' in search_buffer:
+                        state = "after_key"
+                    continue
+
+                if state == "after_key":
+                    if char == ":":
+                        state = "before_value"
+                    continue
+
+                if state == "before_value":
+                    if char == '"':
+                        state = "in_answer"
+                    continue
+
+                if state != "in_answer":
+                    continue
+
+                if unicode_buffer:
+                    unicode_buffer += char
+                    if len(unicode_buffer) == 5:
+                        try:
+                            yield emit(chr(int(unicode_buffer[1:], 16)))
+                        except ValueError:
+                            yield emit(unicode_buffer)
+                        unicode_buffer = ""
+                    continue
+
+                if escape:
+                    escape = False
+                    if char == "u":
+                        unicode_buffer = "\\u"
+                        continue
+                    escape_map = {
+                        '"': '"',
+                        "\\": "\\",
+                        "/": "/",
+                        "n": "\n",
+                        "r": "\r",
+                        "t": "\t",
+                        "b": "\b",
+                        "f": "\f",
+                    }
+                    yield emit(escape_map.get(char, char))
+                    continue
+
+                if char == "\\":
+                    escape = True
+                    continue
+                if char == '"':
+                    state = "done"
+                    continue
+                yield emit(char)
+
+        raw = "".join(raw_parts).strip()
+        emitted_answer = "".join(emitted)
+        try:
+            parsed = parse_llm_json_response(raw)
+            answer = parsed["answer"]
+            if not emitted_answer:
+                yield answer
+            elif answer.startswith(emitted_answer):
+                remainder = answer[len(emitted_answer):]
+                if remainder:
+                    yield remainder
+            return raw, answer, parsed["confidence"]
+        except Exception:
+            if not emitted_answer and raw:
+                yield raw
+            return raw, emitted_answer or raw, 0.0
+
     def _retrieve_with_hyde(self, query, source_filter=None):
         logger.info(f"使用 HyDE 策略进行检索 (查询: '{query}')")
         hyde_prompt_template = RAGPrompts.hyde_prompt()
@@ -159,20 +249,20 @@ class RAGSystem:
         return "\n\n".join(blocks)
 
     def _make_refusal(self, reason):
-        return f"信息不足，无法基于已检索到的法律条文可靠回答。{reason}如需进一步确认，请联系人工客服，电话：{conf.CUSTOMER_SERVICE_PHONE}。"
+        return f"信息不足，无法基于已检索到的内部文档可靠回答。{reason}如需进一步确认，请联系人工客服，电话：{conf.CUSTOMER_SERVICE_PHONE}。"
 
     def _grounding_decision(self, source, has_context, rerank_score, citations):
         if source != "rag":
             return GroundingDecision(should_answer=True, grounded=False)
         if not conf.ENABLE_GROUNDING_GATE:
             return GroundingDecision(should_answer=True, grounded=bool(citations))
-        if not conf.REQUIRE_CONTEXT_FOR_LEGAL_QA:
+        if not conf.REQUIRE_CONTEXT_FOR_KB_QA:
             return GroundingDecision(should_answer=True, grounded=bool(citations))
         if not has_context or not citations:
             return GroundingDecision(
                 should_answer=False,
                 grounded=False,
-                refusal_reason="未检索到可引用的法律依据。",
+                refusal_reason="未检索到可引用的知识库内容。",
             )
         min_score = conf.MIN_RERANK_SCORE
         if rerank_score < min_score:
@@ -267,5 +357,66 @@ class RAGSystem:
         )
 
     def generate_answer_stream(self, query, source_filter=None, history=""):
-        result = self.generate_answer(query, source_filter=source_filter, history=history)
-        return iter_llm_output(result.answer), result
+        start_time = time.time()
+        logger.info(f"开始流式处理查询: '{query}', 来源过滤: {source_filter}")
+
+        context, source, rerank_score, has_context, citations = self._resolve_context(
+            query,
+            source_filter=source_filter,
+        )
+
+        grounding = self._grounding_decision(source, has_context, rerank_score, citations)
+        if not grounding.should_answer:
+            answer = self._make_refusal(grounding.refusal_reason)
+            result = GenerationResult(
+                answer=answer,
+                source=source,
+                rerank_score=rerank_score,
+                has_context=has_context,
+                citations=citations,
+                grounded=False,
+                refusal_reason=grounding.refusal_reason,
+            )
+            return iter_llm_output(answer), result
+
+        result = GenerationResult(
+            answer="",
+            source=source,
+            rerank_score=rerank_score,
+            has_context=has_context,
+            citations=citations,
+            grounded=grounding.grounded,
+            refusal_reason="",
+        )
+        prompt_input = self._build_prompt(query, context=context, history=history)
+
+        def stream_answer():
+            parts = []
+            try:
+                raw_chunks = self.stream_llm(prompt_input)
+                answer_stream = self._iter_answer_from_json_stream(raw_chunks)
+                while True:
+                    try:
+                        token = next(answer_stream)
+                    except StopIteration as stop:
+                        raw, answer, confidence = stop.value or ("", "".join(parts), 0.0)
+                        result.answer = answer
+                        result.llm_confidence = confidence
+                        logger.info(
+                            "流式查询处理完成 (耗时: %.2fs, source=%s, rerank=%.3f, confidence=%.3f, raw_chars=%d)",
+                            time.time() - start_time,
+                            source,
+                            rerank_score,
+                            confidence,
+                            len(raw),
+                        )
+                        break
+                    parts.append(token)
+                    yield token
+            except Exception as exc:
+                logger.error(f"调用 LLM 流式生成答案失败: {exc}")
+                fallback = f"抱歉，处理您的问题时出错。请联系人工客服：{conf.CUSTOMER_SERVICE_PHONE}"
+                result.answer = fallback
+                yield fallback
+
+        return stream_answer(), result

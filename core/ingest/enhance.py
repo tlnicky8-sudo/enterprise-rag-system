@@ -10,8 +10,8 @@ STOPWORDS = {
     "规定",
     "可以",
     "应当",
-    "劳动者",
-    "用人单位",
+    "员工",
+    "公司",
     "或者",
     "以及",
     "不得",
@@ -28,9 +28,9 @@ def extract_keywords(text: str, limit: int = 8) -> list[str]:
 def build_hypothetical_questions(keywords: list[str], section_path: str) -> list[str]:
     questions = []
     if section_path and section_path != "正文":
-        questions.append(f"{section_path} 是怎么规定的？")
+        questions.append(f"{section_path} 的具体要求是什么？")
     for keyword in keywords[:3]:
-        questions.append(f"{keyword} 相关法律规定是什么？")
+        questions.append(f"公司关于 {keyword} 的制度是什么？")
     return questions[:4]
 
 

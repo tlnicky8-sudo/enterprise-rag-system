@@ -15,7 +15,7 @@ from core.vector_store import VectorStore
 
 
 class IngestPipeline:
-    """Six-stage legal corpus ingestion pipeline."""
+    """Six-stage enterprise knowledge corpus ingestion pipeline."""
 
     def __init__(self, vector_store: VectorStore | None = None, conf: Config | None = None) -> None:
         self.conf = conf or Config()

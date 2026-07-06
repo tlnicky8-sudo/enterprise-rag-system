@@ -7,7 +7,7 @@ def test_normalize_question_from_tuple():
 
 
 def test_preprocess_text_returns_tokens():
-    tokens = preprocess_text("劳动合同法")
+    tokens = preprocess_text("员工手册")
     assert isinstance(tokens, list)
     assert len(tokens) >= 1
 

@@ -1,26 +1,28 @@
-# QA Projector
+# Enterprise RAG System
 
 [![CI](https://github.com/tlnicky8-sudo/enterprise-rag-system/actions/workflows/ci.yml/badge.svg)](https://github.com/tlnicky8-sudo/enterprise-rag-system/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-面向企业问答的 RAG 系统。提供 Flask Web 聊天界面，使用 Milvus + BGE-M3 混合检索与重排序，并通过 OpenAI-compatible 接口调用 DashScope / Qwen / DeepSeek 等模型生成答案。
+Enterprise RAG System is a Chinese enterprise knowledge-base RAG template for internal policy, process, handbook, IT, HR, compliance, and operations Q&A. It combines a Redis FAQ fast path, Milvus hybrid retrieval, BGE-M3 embeddings, reranking, grounding checks, citations, configurable prompts, and OpenAI-compatible LLM APIs.
+
+中文定位：这是一个面向企业内部知识库的 RAG 问答模板，示例领域为“天恒科技”内部制度与流程问答。
 
 ## Documentation
 
-| 文档 | 说明 |
-|------|------|
-| **[docs/data-and-cache-usage.md](docs/data-and-cache-usage.md)** | **数据处理、FAQ 入库、问答缓存 — 怎么用（推荐先看）** |
-| [models/README.md](models/README.md) | 本地模型路径与意图分类训练 |
+| Document | Description |
+|----------|-------------|
+| **[docs/data-and-cache-usage.md](docs/data-and-cache-usage.md)** | **Data ingestion, FAQ import, and cache policy** |
+| [models/README.md](models/README.md) | Local model paths and intent classifier training |
 
 ## Features
 
-- **双层 QA 流水线** — Redis FAQ 快路径 + Milvus RAG 回退
-- **可信回答** — Grounding gate、证据引用 `[1][2]`、低置信度拒答
-- **智能检索策略** — 直接检索 / HyDE / 子查询 / 回溯问题（LLM 自动选择）
-- **六步语料入库** — 解析 → 清洗 → 切块 → 增强 → 索引 → 血缘报告
-- **FAQ 高频问答** — JSONL 入库 Redis，语义缓存 + BM25 双路命中
-- **统一后端配置** — `config.ini`（基础设施）+ `config/runtime.yaml`（策略开关）+ `config/prompts/`（提示词）
+- **Two-stage QA pipeline**: Redis FAQ fast path before Milvus-backed RAG fallback.
+- **Grounded answers**: grounding gate, evidence citations, low-confidence refusal, and JSON output contract.
+- **Adaptive retrieval strategies**: direct retrieval, HyDE, subquery retrieval, and backtracking retrieval with LLM selection plus heuristic fallback.
+- **Document ingestion pipeline**: parse, clean, chunk, enrich, index, and lineage reporting.
+- **FAQ and semantic cache**: JSONL FAQ import, Redis semantic cache, BM25 fallback, and optional RAG answer write-back.
+- **Centralized configuration**: `config.ini` for infrastructure, `config/runtime.yaml` for runtime switches, and `config/prompts/` for prompt templates.
 
 ## Table of Contents
 
@@ -37,34 +39,51 @@
 
 ## Architecture
 
-```text
-Query
-  → FAQ (Redis semantic cache → BM25)
-  → miss → Intent (通用知识 / 专业咨询)
-      → 通用知识: LLM 直接回答
-      → 专业咨询: strategy → Milvus hybrid retrieval → grounding gate → LLM (JSON)
-  → cache write (if grounded + score ≥ threshold)
-  → answer + citations
+The system follows a "FAQ fast path + trusted RAG fallback" architecture. Stable high-frequency questions are served from Redis first. Misses are routed through intent classification, retrieval strategy selection, hybrid retrieval, grounding, LLM generation, citation building, and optional semantic-cache write-back.
+
+```mermaid
+flowchart TD
+    userQuery["User Query"] --> faqLayer["FAQ Layer: Semantic Cache + BM25"]
+    faqLayer -->|"hit"| answer["Answer + Citations"]
+    faqLayer -->|"miss"| intent["Intent Classification"]
+    intent -->|"General"| directLLM["Direct LLM Answer"]
+    intent -->|"Enterprise Knowledge"| strategy["Retrieval Strategy Selection"]
+    strategy --> retrieval["Milvus Hybrid Retrieval + Rerank"]
+    retrieval --> grounding["Grounding Gate"]
+    grounding --> generation["JSON Generation + Evidence Citation"]
+    generation --> cacheWrite["Optional Semantic Cache Write"]
+    cacheWrite --> answer
+    directLLM --> answer
 ```
 
-**数据存储**
+| Layer | Responsibility | Implementation |
+|-------|----------------|----------------|
+| FAQ Layer | Low-latency responses for stable high-frequency Q&A | Redis semantic cache + BM25 |
+| Intent Layer | Route general questions and enterprise knowledge questions | BERT checkpoint / LLM fallback |
+| Retrieval Layer | Select retrieval strategy based on query complexity | Direct / HyDE / Subquery / Backtracking |
+| Trust Layer | Prevent unsupported answers and attach evidence | Grounding gate + citation builder |
+| Cache Layer | Write high-quality RAG answers back to semantic cache | `core/cache_policy.py` |
 
-| 数据 | 存储 | 入库脚本 |
-|------|------|----------|
-| 法律语料（检索用） | Milvus | `setup_data.py` |
-| 高频问答对 | Redis | `setup_faq_data.py` |
+**Data stores**
 
-详细入库说明见 **[docs/data-and-cache-usage.md](docs/data-and-cache-usage.md)**。
+| Data | Storage | Import / Runtime Script |
+|------|---------|-------------------------|
+| Enterprise document chunks | Milvus | `setup_data.py` |
+| FAQ pairs and semantic cache | Redis | `setup_faq_data.py` |
+| Evaluation sets and reports | Local `data/assessment_data/` | `scripts/live_eval.py` |
+
+For operational details, see [docs/data-and-cache-usage.md](docs/data-and-cache-usage.md).
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.10 – 3.13
-- [Milvus](https://milvus.io/)（默认 `localhost:19530`）
-- LLM API Key（DashScope / DeepSeek 等 OpenAI-compatible 服务）
-- Redis（FAQ 快路径；不可用时降级为纯 RAG）
-- 本地检索模型：`bge-m3`、`bge-reranker-large`（意图分类 BERT 可选，缺失时走大模型兜底；见 [models/README.md](models/README.md)）
+- Python 3.10 - 3.13
+- [Milvus](https://milvus.io/) at `localhost:19530` by default
+- Redis for FAQ search and semantic cache
+- OpenAI-compatible LLM API key, such as DashScope, Qwen-compatible endpoints, or DeepSeek
+- Local retrieval models: `bge-m3` and `bge-reranker-large`
+- Optional local intent classifier checkpoint under `models/bert_outputs/`
 
 ### Install
 
@@ -73,7 +92,7 @@ git clone https://github.com/tlnicky8-sudo/enterprise-rag-system.git
 cd enterprise-rag-system
 
 uv venv && uv sync --extra retrieval --extra documents --extra faq --extra dev
-# 或: pip install -r requirements.txt && pip install -r requirements-dev.txt
+# Alternative: pip install -r requirements.txt && pip install -r requirements-dev.txt
 ```
 
 ### Configure
@@ -84,20 +103,30 @@ cp config/runtime.example.yaml config/runtime.yaml
 cp .env.example .env
 ```
 
-在 `.env` 中填写 API Key：
+Fill in your API key in `.env`:
 
 ```bash
 DASHSCOPE_API_KEY=your_api_key
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
+Update local model paths in `config.ini`:
+
+```ini
+[models]
+bge_m3_path = /path/to/bge-m3
+bge_reranker_path = /path/to/bge-reranker-large
+bert_base_path = /path/to/bert-base-chinese
+bert_classifier_path = models/bert_outputs
+```
+
 ### Ingest Data
 
 ```bash
-# 1. 将法律文档放入 data/labor_law_data/
+# 1. Put enterprise documents under data/enterprise_data/
 python setup_data.py
 
-# 2. 准备 FAQ 并入库 Redis
+# 2. Prepare FAQ pairs and import them into Redis
 mkdir -p data/faq_data
 cp examples/faq_pairs.example.jsonl data/faq_data/faq_pairs.jsonl
 python setup_faq_data.py
@@ -112,18 +141,18 @@ python rag_main.py   # CLI
 
 ## Configuration
 
-| 文件 | 用途 |
-|------|------|
-| `.env` | API Key、敏感连接信息（优先于 config.ini） |
-| `config.ini` | Redis / Milvus / 模型路径 / 分块参数 |
-| `config/runtime.yaml` | 功能开关、召回数、阈值、策略默认值 |
-| `config/prompts/*.txt` | RAG / HyDE / 策略选择等提示词模板 |
+| File | Purpose |
+|------|---------|
+| `.env` | API keys and sensitive connection settings. Environment values take precedence over `config.ini`. |
+| `config.ini` | Redis, Milvus, model paths, and ingestion chunk settings. |
+| `config/runtime.yaml` | Feature flags, retrieval thresholds, grounding thresholds, strategy switches, and cache policy. |
+| `config/prompts/*.txt` | Prompt templates for RAG, intent classification, HyDE, subquery, backtracking, and strategy selection. |
 
-`config.ini` 与 `config/runtime.yaml` 不会提交到 Git，请从 `*.example.*` 复制。
+`config.ini` and `config/runtime.yaml` are local files and are not committed. Create them from the provided examples.
 
-意图识别优先加载 `models/bert_outputs/best_intent_classifier.pt`。如果本地没有训练模型，会自动使用大模型按 `config/prompts/intent.txt` 分类；大模型不可用时默认走 `专业咨询`。
+Intent classification loads `models/bert_outputs/best_intent_classifier.pt` first. If no local checkpoint exists, the system uses the LLM prompt at `config/prompts/intent.txt`; if the LLM fallback is unavailable, the default category is `专业咨询`.
 
-环境变量覆盖示例：
+Environment variable overrides:
 
 ```bash
 RUNTIME_RETRIEVAL_RETRIEVAL_K=8
@@ -133,51 +162,57 @@ RUNTIME_CONFIG=/path/to/runtime.yaml
 
 ## Data Ingestion
 
-> 完整操作说明（含缓存命中逻辑、写回策略、调参建议）见 **[docs/data-and-cache-usage.md](docs/data-and-cache-usage.md)**。
+For data-layer details, cache behavior, and threshold tuning, see [docs/data-and-cache-usage.md](docs/data-and-cache-usage.md).
 
-### RAG 语料入库 — `setup_data.py`
+### RAG Corpus Import — `setup_data.py`
 
-将 PDF / Word / Markdown 等放入 `data/labor_law_data/`，执行六步流水线写入 Milvus：
+Put PDF, Word, PowerPoint, Markdown, text, or image files under `data/enterprise_data/`, then run:
 
 ```bash
 python setup_data.py
-python setup_data.py --dry-run          # 仅校验流程
-python setup_data.py --enhance          # 开启关键词 / 假设问题增强
-python setup_data.py --skip-if-exists   # 集合已有数据则跳过
+python setup_data.py --dry-run          # Validate parsing and chunking without writing to Milvus
+python setup_data.py --enhance          # Add keywords and hypothetical questions to improve recall
+python setup_data.py --skip-if-exists   # Skip ingestion when the Milvus collection already has data
 ```
 
-### 高频 FAQ 入库 — `setup_faq_data.py`
+### FAQ Import — `setup_faq_data.py`
 
-将问答对写入 `data/faq_data/faq_pairs.jsonl`（JSONL，每行 `{"question":"...","answer":"..."}`），导入 Redis 并预热语义缓存：
+FAQ pairs are stored as JSONL under `data/faq_data/faq_pairs.jsonl`, one record per line:
+
+```json
+{"question": "How many annual leave days do employees have?", "answer": "According to the employee handbook, employees with 1 to 10 years of cumulative work experience receive 5 days per year..."}
+```
+
+Import and preheat FAQ cache:
 
 ```bash
 mkdir -p data/faq_data
 cp examples/faq_pairs.example.jsonl data/faq_data/faq_pairs.jsonl
 python setup_faq_data.py
-python setup_faq_data.py --replace       # 清空旧数据后重导
-python setup_faq_data.py --dry-run       # 仅解析校验
+python setup_faq_data.py --replace       # Clear existing FAQ records before import
+python setup_faq_data.py --dry-run       # Validate input without writing to Redis
 ```
 
-### 问答缓存
+### Cache Policy
 
-- **读**：用户提问 → 语义缓存 → BM25 → 未命中再走 RAG（见使用说明第四节）
-- **写**：RAG 高质量回答自动写回 Redis（`enable_cache_write`，默认开启）
-- **维护**：`python scripts/preheat_faq_cache.py` 可手动重新预热向量缓存
+- **Read path**: semantic cache → BM25 → RAG fallback.
+- **Write path**: high-quality grounded RAG answers can be written back to Redis.
+- **Maintenance**: `python scripts/preheat_faq_cache.py` rebuilds semantic cache vectors from FAQ records.
 
 ## Run
 
-| 入口 | 命令 | 说明 |
-|------|------|------|
-| Web | `python web_app.py` | Flask 聊天界面，SSE 流式输出 |
-| CLI | `python rag_main.py` | 命令行问答 |
+| Entry | Command | Description |
+|-------|---------|-------------|
+| Web | `python web_app.py` | Flask chat UI with SSE streaming and citation metadata |
+| CLI | `python rag_main.py` | Command-line Q&A |
 
-会话历史保存在进程内存中，重启后清空。
+Conversation history is stored in process memory and is cleared after restart.
 
 ## Evaluation
 
-### Live pipeline eval
+### Live Pipeline Evaluation
 
-真实调用 `QAPipeline.answer()`，覆盖 FAQ、Milvus、rerank、grounding gate 和 LLM：
+Runs the real `QAPipeline.answer()` flow, covering FAQ, Milvus retrieval, reranking, grounding, and LLM generation:
 
 ```bash
 python scripts/live_eval.py
@@ -185,43 +220,46 @@ python scripts/live_eval.py --limit 3
 python scripts/live_eval.py --fail-under-pass-rate 0.8
 ```
 
-Golden set：`data/assesment_data/live_eval_golden.jsonl`  
-结果输出：`data/assesment_data/live_eval_results/`
+Golden set (local, not committed): `data/assessment_data/live_eval_golden.jsonl`  
+Output directory: `data/assessment_data/live_eval_results/`
 
-### RAGAS offline eval
+### RAGAS Offline Evaluation
 
 ```bash
 python rag_evaluate.py
 ```
 
-使用静态 JSON，不调用实时流水线，适合离线分析。
+This uses static JSON data and does not invoke the live pipeline.
 
 ## Project Layout
 
 ```text
 .
-├── base/                    # 配置、日志、Prompt 注册
+├── base/                         # Config, logging, prompt registry
 ├── config/
-│   ├── prompts/             # 提示词模板（.txt）
-│   └── runtime.example.yaml # 运行时策略示例
+│   ├── prompts/                  # Prompt templates
+│   └── runtime.example.yaml      # Runtime policy template
 ├── core/
-│   ├── qa_pipeline.py       # FAQ + RAG 统一编排
-│   ├── rag_system.py        # 意图 / 策略 / 生成 / grounding
-│   ├── vector_store.py      # Milvus + BGE-M3 + Reranker
-│   ├── faq/                 # Redis FAQ / BM25 / 缓存
-│   └── ingest/              # 六步入库流水线
+│   ├── qa_pipeline.py            # FAQ + RAG orchestration
+│   ├── rag_system.py             # Intent, retrieval strategy, generation, grounding
+│   ├── vector_store.py           # Milvus + BGE-M3 + reranker
+│   ├── faq/                      # Redis FAQ, BM25, semantic cache
+│   └── ingest/                   # Parse, clean, chunk, enrich, index, lineage
 ├── data/
-│   ├── labor_law_data/      # RAG 原始语料（本地创建）
-│   └── faq_data/            # FAQ 问答对（本地创建）
+│   ├── enterprise_data/           # Local enterprise corpus, not committed
+│   ├── faq_data/                  # Local FAQ pairs, not committed
+│   └── assessment_data/           # Local evaluation data and reports
 ├── docs/
-│   └── data-and-cache-usage.md  # 数据处理 / FAQ / 缓存
+│   └── data-and-cache-usage.md    # Data ingestion and cache policy guide
 ├── examples/
-│   └── faq_pairs.example.jsonl  # FAQ 示例数据
-├── scripts/                 # live_eval 等辅助脚本
-├── setup_data.py            # RAG 语料入库入口
-├── setup_faq_data.py        # FAQ 入库入口
-├── web_app.py               # Web 入口
-└── tests/                   # Smoke tests
+│   └── faq_pairs.example.jsonl    # Minimal FAQ example
+├── intent_classification/         # Optional BERT intent classifier training
+├── text_splitter/                 # Chinese recursive text splitter
+├── scripts/                       # Evaluation and data generation utilities
+├── setup_data.py                  # RAG corpus ingestion entrypoint
+├── setup_faq_data.py              # FAQ import entrypoint
+├── web_app.py                     # Web entrypoint
+└── tests/                         # Lightweight tests
 ```
 
 ## Tests
@@ -230,11 +268,11 @@ python rag_evaluate.py
 pytest
 ```
 
-轻量测试不加载 Milvus、大模型或 DashScope API。
+The lightweight test suite does not require Milvus, Redis, or an LLM API.
 
 ## Contributing
 
-请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)。提交 PR 前请运行 `pytest`，勿提交 `.env`、`config.ini`、模型权重或完整语料。
+See [CONTRIBUTING.md](CONTRIBUTING.md). Before opening a pull request, run `pytest` and do not commit `.env`, `config.ini`, model weights, or local corpus data.
 
 ## License
 
@@ -242,8 +280,10 @@ pytest
 
 ## Publishing Checklist
 
-首次公开仓库前确认未提交：
+Before publishing the repository, make sure the following are not committed:
 
-- `.venv/`、`.idea/`、`.env`、`config.ini`、`config/runtime.yaml`
-- `logs/`、`models/` 下的模型权重
-- `data/` 下的完整语料与 FAQ 数据
+- `.venv/`, `.idea/`, `.env`, `config.ini`, `config/runtime.yaml`
+- `logs/`
+- model weights under `models/`, including `models/bert_outputs/*.pt`
+- local enterprise corpus and FAQ data under `data/`
+- intent classifier training JSONL under `intent_classification/train_data/`

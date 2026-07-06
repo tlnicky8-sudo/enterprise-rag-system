@@ -36,7 +36,7 @@ def main():
             completion = client.chat.completions.create(
                 model=conf.LLM_MODEL,
                 messages=[
-                    {"role": "system", "content": "你是一个专业的劳动法助手。"},
+                    {"role": "system", "content": conf.GENERATION_SYSTEM_MESSAGE},
                     {"role": "user", "content": prompt},
                 ],
             )
@@ -58,7 +58,7 @@ def main():
 
     session_id = str(uuid.uuid4())
     valid_sources = conf.VALID_SOURCES
-    print("\n欢迎使用劳动法智能问答系统！")
+    print("\n欢迎使用企业知识库智能问答系统！")
     print(f"支持的文档类别：{valid_sources}")
     print("输入您的问题，或输入 'exit' 退出。")
 

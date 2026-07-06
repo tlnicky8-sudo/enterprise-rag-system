@@ -18,8 +18,8 @@ from ragas.metrics import (
 from base import Config
 
 conf = Config()
-DATA_PATH = conf.PROJECT_ROOT / "data" / "assesment_data" / "rag_evaluate_data.json"
-OUTPUT_PATH = conf.PROJECT_ROOT / "data" / "assesment_data" / "ragas_evaluation_results.csv"
+DATA_PATH = conf.PROJECT_ROOT / "data" / "assessment_data" / "rag_evaluate_data.json"
+OUTPUT_PATH = conf.PROJECT_ROOT / "data" / "assessment_data" / "ragas_evaluation_results.csv"
 
 
 def main():

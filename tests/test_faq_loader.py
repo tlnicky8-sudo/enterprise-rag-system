@@ -11,10 +11,10 @@ def test_load_faq_pairs_from_jsonl(tmp_path):
     ]
     file_path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows), encoding="utf-8")
 
-    pairs, skipped = load_faq_pairs(file_path, default_subject="labor_law")
+    pairs, skipped = load_faq_pairs(file_path, default_subject="enterprise")
 
     assert skipped == 0
-    assert pairs == [("labor_law", "Q1", "A1"), ("custom", "Q2", "A2")]
+    assert pairs == [("enterprise", "Q1", "A1"), ("custom", "Q2", "A2")]
 
 
 def test_load_faq_pairs_skips_invalid_and_duplicates(tmp_path):
@@ -30,14 +30,14 @@ def test_load_faq_pairs_skips_invalid_and_duplicates(tmp_path):
         encoding="utf-8",
     )
 
-    pairs, skipped = load_faq_pairs(file_path, default_subject="labor_law")
+    pairs, skipped = load_faq_pairs(file_path, default_subject="enterprise")
 
-    assert pairs == [("labor_law", "Q1", "A1")]
+    assert pairs == [("enterprise", "Q1", "A1")]
     assert skipped == 2
 
 
 def test_to_question_answer_pairs_supports_loader_output():
-    pairs = [("labor_law", "Q1", "A1"), ("custom", "Q2", "A2")]
+    pairs = [("enterprise", "Q1", "A1"), ("custom", "Q2", "A2")]
     assert to_question_answer_pairs(pairs) == [("Q1", "A1"), ("Q2", "A2")]
 
 

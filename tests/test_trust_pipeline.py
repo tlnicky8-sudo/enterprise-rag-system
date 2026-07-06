@@ -13,7 +13,7 @@ class _Conf:
 
 class _FAQService:
     def search(self, query):
-        return "cached answer", False, [{"id": 1, "title": "第十九条", "excerpt": "证据"}]
+        return "cached answer", False, [{"id": 1, "title": "年假制度", "excerpt": "证据"}]
 
 
 class _SessionStore:
@@ -34,7 +34,7 @@ class _SessionStore:
 
 
 def test_cache_policy_requires_grounded_citations():
-    answer = "这是一个足够长的劳动法回答内容，用于验证缓存写入策略。"
+    answer = "这是一个足够长的企业知识库回答内容，用于验证缓存写入策略。"
     ok, _ = should_write_cache(
         query="试用期多久",
         answer=answer,
@@ -64,7 +64,7 @@ def test_cache_policy_requires_grounded_citations():
 
 def test_grounding_decision_rejects_empty_or_low_score_context(monkeypatch):
     system = RAGSystem.__new__(RAGSystem)
-    monkeypatch.setattr("core.rag_system.conf.REQUIRE_CONTEXT_FOR_LEGAL_QA", True)
+    monkeypatch.setattr("core.rag_system.conf.REQUIRE_CONTEXT_FOR_KB_QA", True)
     monkeypatch.setattr("core.rag_system.conf.MIN_RERANK_SCORE", 0.5)
 
     no_context = system._grounding_decision("rag", False, 0.0, [])
@@ -92,5 +92,5 @@ def test_pipeline_propagates_faq_citations():
 
     assert result.source == "faq"
     assert result.grounded is True
-    assert result.citations[0]["title"] == "第十九条"
+    assert result.citations[0]["title"] == "年假制度"
     assert session_store.saved[0][3] == "faq"

@@ -38,6 +38,6 @@ class OCRIMGLoader(BaseLoader):
 
 
 if __name__ == '__main__':
-    img_loader = OCRIMGLoader(img_path=r'D:\uv_projector\qa_projector\data\samples\ocr_04.png')
+    img_loader = OCRIMGLoader(img_path=r'D:\enterprise-rag-system\data\samples\ocr_04.png')
     doc = img_loader.load()
     print(doc)
