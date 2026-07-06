@@ -6,7 +6,6 @@
 
 Enterprise RAG System is a Chinese enterprise knowledge-base RAG template for internal policy, process, handbook, IT, HR, compliance, and operations Q&A. It combines a Redis FAQ fast path, Milvus hybrid retrieval, BGE-M3 embeddings, reranking, grounding checks, citations, configurable prompts, and OpenAI-compatible LLM APIs.
 
-中文定位：这是一个面向企业内部知识库的 RAG 问答模板，示例领域为“天恒科技”内部制度与流程问答。
 
 ## Documentation
 
