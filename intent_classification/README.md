@@ -69,7 +69,7 @@ python scripts/generate_intent_data.py
 | 预训练 BERT | `config.ini` → `[models]` → `bert_base_path` |
 | 输出 checkpoint | `models/bert_outputs/best_intent_classifier.pt` |
 
-训练脚本会**自动读取 `config.ini` 的 `bert_base_path`**，模型可以放在仓库外任意目录（例如 `/Users/tl/Documents/models/bert-base-chinese`），不必复制到 `rag_projector/models/` 下。
+训练脚本会**自动读取 `config.ini` 的 `bert_base_path`**，模型可以放在仓库外任意目录（例如 `/path/to/bert-base-chinese`），不必复制到 `enterprise-rag-system/models/` 下。
 
 仅当本地路径和 `config.ini` 都未配置时，才会回退到 HuggingFace Hub 的 `bert-base-chinese`。
 
